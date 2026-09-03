@@ -13,6 +13,18 @@ class DownloadController extends GetxController {
   var fetchingUrl = ''.obs;
   var downloadProgress = 0.obs;
   var taskId = ''.obs;
+  var downloadTasks = <DownloadTask>[].obs;
+
+  int getProgressForUrl(String url) {
+    try {
+      final task = downloadTasks.firstWhere(
+        (t) => t.url == url && (t.status == DownloadTaskStatus.running || t.status == DownloadTaskStatus.enqueued),
+      );
+      return task.progress;
+    } catch (e) {
+      return -1; // Not downloading
+    }
+  }
 
   final ReceivePort _port = ReceivePort();
 
@@ -20,11 +32,25 @@ class DownloadController extends GetxController {
   void onInit() {
     super.onInit();
     IsolateNameServer.registerPortWithName(_port.sendPort, 'downloader_send_port');
+    loadTasks();
+    
     _port.listen((dynamic data) {
       String id = data[0];
       int status = data[1];
       int progress = data[2];
 
+      // Update the specific task in our reactive list
+      int index = downloadTasks.indexWhere((task) => task.taskId == id);
+      if (index != -1) {
+        var updatedTask = downloadTasks[index];
+        // We can't directly mutate fields of DownloadTask since they are final in some versions, 
+        // so it's safer to just reload tasks.
+        loadTasks();
+      } else {
+        loadTasks();
+      }
+
+      // Legacy single-task tracking for fallback
       if (taskId.value == id) {
         downloadProgress.value = progress;
         DownloadTaskStatus currentStatus = DownloadTaskStatus.fromInt(status);
@@ -34,6 +60,13 @@ class DownloadController extends GetxController {
       }
     });
     FlutterDownloader.registerCallback(downloadCallback);
+  }
+
+  Future<void> loadTasks() async {
+    final tasks = await FlutterDownloader.loadTasks();
+    if (tasks != null) {
+      downloadTasks.value = tasks;
+    }
   }
 
   @override
@@ -159,6 +192,7 @@ class DownloadController extends GetxController {
       if (id != null) {
         taskId.value = id;
         Get.snackbar('Downloading', 'Download started in background');
+        loadTasks(); // refresh list
       } else {
         downloadingUrl.value = '';
       }

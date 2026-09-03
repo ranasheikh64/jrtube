@@ -74,7 +74,19 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(title: CustomText(text: widget.title, maxLines: 1)),
+      appBar: AppBar(
+        title: CustomText(text: widget.title, maxLines: 1),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.black, Colors.grey.shade900],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+        ),
+        elevation: 0,
+      ),
       body: Stack(
         children: [
           Center(
@@ -116,25 +128,28 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                     child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                   ),
                 );
-              } else if (downloadController.downloadingUrl.value == widget.videoUrl) {
-                return Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.6),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.downloading, color: Colors.blue, size: 24),
-                      const SizedBox(width: 8),
-                      Text(
-                        '${downloadController.downloadProgress.value}%',
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                );
+              } else {
+                final progress = downloadController.getProgressForUrl(widget.videoUrl);
+                if (progress != -1) {
+                  return Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.6),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.downloading, color: Colors.blue, size: 24),
+                        const SizedBox(width: 8),
+                        Text(
+                          '$progress%',
+                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  );
+                }
               }
               return Container(
                 decoration: BoxDecoration(
