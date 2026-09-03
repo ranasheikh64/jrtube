@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:frontend/presentation/screens/video_player_screen.dart';
 import 'package:get/get.dart';
@@ -7,6 +8,7 @@ import '../../widgets/custom_text.dart';
 import '../../widgets/custom_searchfield.dart';
 
 import '../controllers/download_controller.dart';
+import 'downloads_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -21,7 +23,48 @@ class HomeScreen extends StatelessWidget {
       children: [
         Scaffold(
           appBar: AppBar(
-            title: const CustomText(text: 'Video Viewer', fontSize: 20, fontWeight: FontWeight.bold),
+            flexibleSpace: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.black, Colors.grey.shade900],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
+            ),
+            elevation: 0,
+            title: const CustomText(text: 'Video Viewer', fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+            actions: [
+              Obx(() {
+                final activeCount = downloadController.downloadTasks.where((t) => t.status == DownloadTaskStatus.running).length;
+                return Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.download_done_rounded, color: Colors.white, size: 28),
+                      onPressed: () => Get.to(() => const DownloadsScreen()),
+                    ),
+                    if (activeCount > 0)
+                      Positioned(
+                        right: 8,
+                        top: 8,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: const BoxDecoration(
+                            color: Colors.redAccent,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Text(
+                            '$activeCount',
+                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.white),
+                          ),
+                        ),
+                      )
+                  ],
+                );
+              }),
+              SizedBox(width: 8.w),
+            ],
             bottom: PreferredSize(
               preferredSize: Size.fromHeight(70.h),
               child: Padding(
@@ -129,7 +172,7 @@ class HomeScreen extends StatelessWidget {
                                   shape: BoxShape.circle,
                                 ),
                                 child: Obx(() {
-                                  if (downloadController.isFetchingFormats.value) {
+                                  if (downloadController.fetchingUrl.value == video.url) {
                                     return const Padding(
                                       padding: EdgeInsets.all(12),
                                       child: SizedBox(
@@ -138,21 +181,24 @@ class HomeScreen extends StatelessWidget {
                                         child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                                       ),
                                     );
-                                  } else if (downloadController.isDownloading.value) {
-                                    return Padding(
-                                      padding: const EdgeInsets.all(12),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          const Icon(Icons.downloading, color: Colors.blue, size: 24),
-                                          const SizedBox(width: 8),
-                                          Text(
-                                            '${downloadController.downloadProgress.value}%',
-                                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                                          ),
-                                        ],
-                                      ),
-                                    );
+                                  } else {
+                                    final progress = downloadController.getProgressForUrl(video.url);
+                                    if (progress != -1) {
+                                      return Padding(
+                                        padding: const EdgeInsets.all(12),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            const Icon(Icons.downloading, color: Colors.blue, size: 24),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              '$progress%',
+                                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    }
                                   }
                                   return IconButton(
                                     icon: const Icon(Icons.download, color: Colors.white),
