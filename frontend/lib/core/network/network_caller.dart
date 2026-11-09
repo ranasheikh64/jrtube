@@ -1,8 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
-
-
 class NetworkCaller {
   static final NetworkCaller _instance = NetworkCaller._internal();
   late Dio _dio;
@@ -12,17 +10,16 @@ class NetworkCaller {
   }
 
   String get _getBaseUrl {
-    // Since you are using a physical Android device and have run `adb reverse`, 
-    // the device's localhost (127.0.0.1) is now mapped to your computer's localhost.
-    return 'http://127.0.0.1:8000/api/v1'; 
+    // Vercel deployment URL
+    return 'http://168.231.124.228:8069/api/v1';
   }
 
   NetworkCaller._internal() {
     _dio = Dio(
       BaseOptions(
         baseUrl: _getBaseUrl,
-        connectTimeout: const Duration(seconds: 15),
-        receiveTimeout: const Duration(seconds: 15),
+        connectTimeout: const Duration(seconds: 30),
+        receiveTimeout: const Duration(seconds: 30),
         headers: {'Content-Type': 'application/json'},
       ),
     );
@@ -31,10 +28,14 @@ class NetworkCaller {
       InterceptorsWrapper(
         onRequest: (options, handler) {
           // Add auth token if needed here
+          debugPrint('API Request: ${options.method} ${options.uri}');
           return handler.next(options);
         },
         onError: (DioException e, handler) {
-          debugPrint('API Error: ${e.message}');
+          debugPrint('API Error Message: ${e.message}');
+          if (e.response != null) {
+            debugPrint('API Error Response Data: ${e.response?.data}');
+          }
           return handler.next(e);
         },
       ),
@@ -42,7 +43,10 @@ class NetworkCaller {
   }
 
   // Generic GET request
-  Future<Response?> get(String endpoint, {Map<String, dynamic>? queryParameters}) async {
+  Future<Response?> get(
+    String endpoint, {
+    Map<String, dynamic>? queryParameters,
+  }) async {
     try {
       return await _dio.get(endpoint, queryParameters: queryParameters);
     } catch (e) {
@@ -72,7 +76,10 @@ class NetworkCaller {
   }
 
   // Generic DELETE request
-  Future<Response?> delete(String endpoint, {Map<String, dynamic>? data}) async {
+  Future<Response?> delete(
+    String endpoint, {
+    Map<String, dynamic>? data,
+  }) async {
     try {
       return await _dio.delete(endpoint, data: data);
     } catch (e) {
@@ -83,7 +90,12 @@ class NetworkCaller {
 
   void _handleError(dynamic error) {
     if (error is DioException) {
-      debugPrint("Network Error: ${error.response?.statusCode} - ${error.message}");
+      debugPrint(
+        "Network Error: ${error.response?.statusCode} - ${error.message}",
+      );
+      if (error.response?.data != null) {
+        debugPrint("Response Body: ${error.response?.data}");
+      }
     } else {
       debugPrint("Unknown Error: $error");
     }

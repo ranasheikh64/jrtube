@@ -42,7 +42,6 @@ class DownloadController extends GetxController {
       // Update the specific task in our reactive list
       int index = downloadTasks.indexWhere((task) => task.taskId == id);
       if (index != -1) {
-        var updatedTask = downloadTasks[index];
         // We can't directly mutate fields of DownloadTask since they are final in some versions, 
         // so it's safer to just reload tasks.
         loadTasks();
