@@ -1,3 +1,4 @@
+# pyrefly: ignore [missing-import]
 from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
@@ -8,6 +9,7 @@ class Settings(BaseSettings):
     REDIS_URL: str = "rediss://default:Aaa2AAIgcDFjM2YyNmNlNzYzYWE0NWZjODllMDY4ZTkxYmU4ZDhkOA@valid-boar-42678.upstash.io:6379" 
     
     CACHE_TTL_SECONDS: int = 7200  # 2 hours
+    YOUTUBE_COOKIES_BASE64: str | None = None
 
     class Config:
         env_file = ".env"
